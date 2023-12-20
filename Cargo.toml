@@ -1,0 +1,17 @@
+[package]
+name = "omg-idl-parser"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lalrpop-util = { version = "0.20.0", features = ["lexer", "unicode", "regex"] }
+log = "0.4.20"
+serde = { version = "1.0.193", features = ["serde_derive"] }
+
+[dev-dependencies]
+simple_logger = "4.3.0"
+
+[build-dependencies]
+lalrpop = "0.20.0"
