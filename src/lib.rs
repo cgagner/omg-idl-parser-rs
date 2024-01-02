@@ -12,14 +12,20 @@ mod tests {
     #[test]
     fn test_parser() {
         let test_str = r#"
+        
+        // This is a line comment
+        /* This is a block comment */
+
+        /*
+         * This is a multi-line comment
+         */
 
         module Moos {
+            // Test
             struct Message {
                 double timestamp_123_test;
             };
 
-            
-            
         };
 
         "#;

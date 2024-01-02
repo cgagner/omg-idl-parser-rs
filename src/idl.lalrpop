@@ -6,6 +6,11 @@ grammar;
 // Building Block Core Data Types
 //----------------------------------------------------------------------------
 
+comment: () = {
+  line_comment,
+  block_comment,
+}
+
 // (1)
 pub Document: () = {
   definition+
@@ -13,6 +18,8 @@ pub Document: () = {
 
 // (2)
 definition: () = {
+  comment,
+  identifier ";",
   module_dcl ";",
   const_dcl ";",
   type_dcl ";", 
@@ -28,11 +35,9 @@ definition: () = {
   // (133) Building Block Components - Basic
   component_dcl ";",
   // (144) Building Block Components - Home
-  // TODO: Fix home_dcl
-  //home_dcl ";",
+  home_dcl ";",
   // (153) Building Block CCM-Specific
-  // TODO: Fix event_dcl
-  //event_dcl ";",
+  event_dcl ";",
   // (171) Building Block Components - Ports and Connectors
   porttype_dcl ";",
   connector_dcl ";",
@@ -41,8 +46,7 @@ definition: () = {
   // TODO: Fix template_module_inst
   //template_module_inst ";",
   // (218) Building Block Annotations
-  // TODO: Fix annotation_dcl
-  //annotation_dcl " ;",
+  annotation_dcl ";",
 }
 
 
@@ -610,12 +614,7 @@ readonly_attr_spec: () = {
 // (90)
 readonly_attr_declarator: () = {
   simple_declarator raises_expr,
-  simple_declarators
-}
-
-simple_declarators: () = {
-  simple_declarator,
-  simple_declarators "," simple_declarator,
+  simple_declarator ("," simple_declarator)*
 }
 
 // (91)
@@ -626,7 +625,7 @@ attr_spec: () = {
 // (92)
 attr_declarator: () = {
   simple_declarator attr_raises_expr,
-  simple_declarators
+  simple_declarator ("," simple_declarator)*
 }
 
 // (93)
@@ -665,9 +664,9 @@ value_dcl: () = {
   value_def,
   value_forward_dcl,
   // (125) Building Block CORBA-Specific - Value Types
-  // TODO: Fix value_box_def and value_abs_def
+  // NOTE: Value_box_def is handled by value_forward_dcl
   //value_box_def,
-  //value_abs_def,
+  value_abs_def,
 }
 
 // (100)
@@ -680,7 +679,7 @@ value_header: () = {
   // NOTE: value_inheritance_spec is optional. However, the first option in
   // value_inheritance_spec can be empty so we don't need to make it optional
   // here.
-  value_kind identifier value_inheritance_spec //?
+  value_kind identifier value_inheritance_spec?
 }
 
 // (102)
@@ -693,9 +692,12 @@ value_kind: () = {
 // (103)
 value_inheritance_spec: () = {
   // NOTE: without a whitespace after the colon, this statement causes conflicts
-  (r":\\s+" value_name)? ("supports" interface_name)?,
+  ":" value_name ("supports" interface_name)?,
+  "supports" interface_name,
   // (130) Building Block CORBA-Specific - Value Types
-  ":" "truncatable"? value_name ("," value_name)* ("supports" interface_name ("," interface_name)*)?,
+  // NOTE: Needed to break these up into two statements to fix conflicts
+  ":" "truncatable" value_name ("," value_name)* ("supports" interface_name ("," interface_name)*)?,
+  ":" value_name ("," value_name)+ ("supports" interface_name ("," interface_name)*)?,
 }
 
 // (104)
@@ -734,7 +736,10 @@ init_param_dcl: () = {
 
 // (110)
 value_forward_dcl: () = {
-  value_kind identifier
+  // (126) value_box_def is the same as value_forward_dcl with a type_spec
+  // for Building Block CORBA-Specific - Value Types
+  // TODO: Need to handle type_spec as value_box_def
+  value_kind identifier type_spec?
 }
 
 //----------------------------------------------------------------------------
@@ -819,6 +824,9 @@ value_box_def: () = {
 
 // (127)
 value_abs_def: () = {
+  // NOTE: value_inheritance_spec is optional. However, the first option in
+  // value_inheritance_spec can be empty so we don't need to make it optional
+  // here.
   "abstract" "valuetype" identifier value_inheritance_spec? "{" export* "}"
 }
 
@@ -927,7 +935,9 @@ home_dcl: () = {
 home_header: () = {
   "home" identifier home_inheritance_spec? "manages" scoped_name,
   // (162) Building Block CCM-Specific
-  "home" identifier home_inheritance_spec? supported_interface_spec? "manages" scoped_name primary_key_spec?,
+  // NOTE: Broken into two lines to prevent conflicts
+  "home" identifier home_inheritance_spec? supported_interface_spec "manages" scoped_name primary_key_spec?,
+  "home" identifier home_inheritance_spec? "manages" scoped_name primary_key_spec,
 }
 
 // (147)
@@ -1031,7 +1041,10 @@ event_forward_dcl: () = {
 }
 
 // (168)
-event_abs_def: () = { 
+event_abs_def: () = {
+  // NOTE: value_inheritance_spec is optional. However, the first option in
+  // value_inheritance_spec can be empty so we don't need to make it optional
+  // here.
   "abstract" "eventtype" identifier value_inheritance_spec? "{" export* "}"
 }
 
@@ -1042,6 +1055,9 @@ event_def: () = {
 
 // (170)
 event_header: () = {
+  // NOTE: value_inheritance_spec is optional. However, the first option in
+  // value_inheritance_spec can be empty so we don't need to make it optional
+  // here.
   "custom"? "eventtype" identifier value_inheritance_spec?
 }
 
@@ -1165,8 +1181,7 @@ template_module_inst: () = {
 
 // (191)
 actual_parameters: () = {
-  actual_parameter,
-  actual_parameters "," actual_parameter
+  actual_parameter ("," actual_parameter)*
 }
 
 // (192)
@@ -1318,18 +1333,15 @@ annotation_body_parts: () = {
 
 // (222)
 annotation_member: () = { 
-  annotation_member_type simple_declarator default_const_expr? ";"
-}
-
-default_const_expr: () = {
-  "default" const_expr
+  annotation_member_type simple_declarator ("default" const_expr)? ";"
 }
 
 // (223)
 annotation_member_type: () = { 
   const_type, 
   any_const_type,
-  scoped_name,
+  // NOTE: scoped_name is already included under const_type
+  //scoped_name,
 }
 
 // (224)
@@ -1357,18 +1369,47 @@ annotation_appl_param: () = {
 // 
 //----------------------------------------------------------------------------
 
-// TODO: Remove these types
-integer_literal: () = {}
-floating_pt_literal: () = {}
-fixed_pt_literal: () = {}
-character_literal: () = {}
-wide_character_literal: () = {}
-string_literal: () = {}
-wide_string_literal: () = {}
+integer_literal: () = {
+  r"(?:0|[1-9](?:_*[0-9])*)[lL]?" => println!("Found integer_literal: {:?}", <>),
+  r"0[xX][a-fA-F0-9](?:_*[a-fA-F0-9])*[lL]?" => println!("Found hex: {:?}", <>),
+  r"0[0-7](?:_*[0-7])*[lL]?" => println!("Found octal: {:?}", <>),
+}
 
+floating_pt_literal: () = {
+  r"([0-9]*\.?[0-9]+[eE][-+]?[0-9]+|[0-9]*\.[0-9]+)" => println!("Found floating point: {:?}", <>),
+}
+
+
+fixed_pt_literal: () = {
+  r"([0-9]+([.][0-9]*)?|[.][0-9]+)[Dd]" => println!("Found fixed point: {:?}", <>),
+}
+
+character_literal: () = {
+  r"'.'" => println!("Found char literal: {:?}", <>),
+}
+
+wide_character_literal: () = {
+  r"L'.'" => println!("Found wide char literal: {:?}", <>),
+}
+
+string_literal: () = {
+  r###""([^"\\]|\\[\s\S])*""### => println!("Found string literal: {:?}", <>),
+}
+
+wide_string_literal: () = {
+  r###"L"([^"\\]|\\[\s\S])*""### => println!("Found wide string literal: {:?}", <>),
+}
 
 identifier: () = {
   r"[a-zA-Z][a-zA-Z0-9_]*" => println!("Found identifier: {:?}", <>)
+}
+
+line_comment: () = {
+  r"//(.*)\n" => println!("Found line comment: {}", <>) 
+}
+
+block_comment: () = {
+  r###"/\*(\*[^/]|[^*])*\*/"### => println!("Found block comment: {}", <>)
 }
 
 //Expr: Box<Expr> = { // (1)
