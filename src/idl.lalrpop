@@ -43,8 +43,7 @@ definition: () = {
   connector_dcl ";",
   // (184) Building Block Template Modules
   template_module_dcl ";",
-  // TODO: Fix template_module_inst
-  //template_module_inst ";",
+  template_module_inst ";",
   // (218) Building Block Annotations
   annotation_dcl ";",
 }
@@ -52,14 +51,16 @@ definition: () = {
 
 // (3)
 module_dcl: () = {
-  "module" identifier "{" definition+ "}" => println!("Found module:" )
+  "module" identifier "{" definition+ "}" => println!("Found module:" ),
 }
 
 // (4)
+#[inline]
 scoped_name: () = {
-  identifier,
-  "::" identifier,
-  scoped_name "::" identifier
+  identifier ("::" identifier)*,
+  "::" identifier ("::" identifier)*,
+  // NOTE: This is handled above
+  //scoped_name "::" identifier
 }
 
 // (5)
@@ -1140,7 +1141,7 @@ connector_export: () = {
 
 // (185)
 template_module_dcl: () = {
-  "module" identifier "<" formal_parameters ">" "{" tpl_definition+ "}"
+  "module" identifier "<" formal_parameters ">" "{" tpl_definition+ "}",
 }
 
 // (186)
@@ -1186,7 +1187,13 @@ actual_parameters: () = {
 
 // (192)
 actual_parameter: () = {
-  type_spec,
+  //type_spec,
+  // NOTE: Both type_spec and const_expr have scoped_name so we need to explode
+  // out the type_spec to simple_type_spec
+  //simple_type_spec,
+  // (216) Building Block Anonymous Types
+  base_type_spec,
+  template_type_spec,
   const_expr,
 }
 
