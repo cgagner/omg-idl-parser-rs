@@ -4,7 +4,7 @@ version 4.2. For more information, see [OMG IDL 4.2](https://www.omg.org/spec/ID
 
 
 ## Build Test Cases
-This repository utilizes [eProsima DDS Type Test](git remote add origin git@github.com:cgagner/omg-idl-parser-rs.git) as an optional submodule for testing. To enable testing with that repository, use:
+This repository utilizes [eProsima DDS Type Test](https://github.com/eProsima/dds-types-test.git) as an optional submodule for testing. To enable testing with that repository, use:
 
 ```bash
 git submodule update --init
