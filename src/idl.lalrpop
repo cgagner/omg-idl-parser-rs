@@ -1,18 +1,25 @@
 use std::str::FromStr;
 
-// TODO: Need to allow comments at the ends of members
 // TODO: Need to add annotation_appls to items
 
+// TODO: Need to pass in a listener or vistor and/or build an abstract syntax tree
+//grammar<'s>(state: &'s mut u32);
+
 grammar;
+
+// Skip whitespace, line comments, and block comments
+match {
+  r"\s*" => { },
+  r"//[^\n\r]*[\n\r]*" => { },
+  r"/\*[^*]*\*+(?:[^/*][^*]*\*+)*/" => { },
+} else {
+  _
+}
+
 
 //----------------------------------------------------------------------------
 // Building Block Core Data Types
 //----------------------------------------------------------------------------
-
-comment: () = {
-  line_comment,
-  block_comment,
-}
 
 // (1)
 pub Document: () = {
@@ -26,7 +33,6 @@ definition: () = {
 }
 
 definition_type : () = {
-  comment,
   identifier ";",
   module_dcl ";",
   const_dcl ";",
@@ -1251,7 +1257,7 @@ identifier_scoped_name: () = {
 
 // (201)
 bitfield: () = {
-  bitfield_spec identifier* ";" comment?
+  bitfield_spec identifier* ";"
 }
 
 // (202)
@@ -1425,14 +1431,6 @@ wide_string_literal: () = {
 
 identifier: () = {
   r"[a-zA-Z][a-zA-Z0-9_]*" => println!("Found identifier: {:?}", <>)
-}
-
-line_comment: () = {
-  r"//(.*)\n" => println!("Found line comment: {}", <>) 
-}
-
-block_comment: () = {
-  r###"/\*(\*[^/]|[^*])*\*/"### => println!("Found block comment: {}", <>)
 }
 
 //----------------------------------------------------------------------------
