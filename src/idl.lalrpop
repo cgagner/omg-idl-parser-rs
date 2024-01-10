@@ -1,5 +1,8 @@
 use std::str::FromStr;
 
+// TODO: Need to allow comments at the ends of members
+// TODO: Need to add annotation_appls to items
+
 grammar;
 
 //----------------------------------------------------------------------------
@@ -18,6 +21,11 @@ pub Document: () = {
 
 // (2)
 definition: () = {
+  preprocessor_directive,
+  annotation_appls definition_type,
+}
+
+definition_type : () = {
   comment,
   identifier ";",
   module_dcl ";",
@@ -356,7 +364,7 @@ struct_def: () = {
 
 // (47)
 member: () = {
-  type_spec declarators ";"
+  annotation_appls type_spec declarators ";"
 }
 
 // (48)
@@ -404,7 +412,7 @@ case_label: () = {
 
 // (55)
 element_spec: () = {
-  type_spec declarator
+  annotation_appls type_spec declarator
 }
 
 // (56)
@@ -1243,7 +1251,7 @@ identifier_scoped_name: () = {
 
 // (201)
 bitfield: () = {
-  bitfield_spec identifier* ";"
+  bitfield_spec identifier* ";" comment?
 }
 
 // (202)
@@ -1266,7 +1274,7 @@ bitmask_dcl: () = {
 
 // (205)
 bit_value: () = {
-  identifier
+  annotation_appls identifier
 }
 
 // (206) Handled above
@@ -1358,7 +1366,15 @@ any_const_type: () = {
 
 // (225)
 annotation_appl: () = { 
-  "@" scoped_name ( "(" annotation_appl_params ")" )?
+  // TODO: This should be scoped_name not identifier, but that causes some
+  // circular references
+  // TODO: annotation_appl_params shouldn't be optional, but this fails one of
+  // the test cases 
+  "@" identifier ( "(" annotation_appl_params? ")" )?
+}
+
+annotation_appls: () = {
+  annotation_appl*
 }
 
 // (226)
@@ -1418,6 +1434,15 @@ line_comment: () = {
 block_comment: () = {
   r###"/\*(\*[^/]|[^*])*\*/"### => println!("Found block comment: {}", <>)
 }
+
+//----------------------------------------------------------------------------
+// Preprocessor
+//----------------------------------------------------------------------------
+
+preprocessor_directive: () = {
+  r"#[^\n]*\n" => println!("Found macro: {:?}", <>),
+}
+
 
 //Expr: Box<Expr> = { // (1)
 //    Expr ExprOp Factor => Box::new(Expr::Op(<>)), // (2)
